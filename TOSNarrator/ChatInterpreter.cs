@@ -62,6 +62,11 @@ namespace TOSFactionColor
                             replacement = replacement.Remove(replacement.IndexOf("]]"), 2);
                             // {#1} {#106}
                             string[] split = replacement.Split(',');
+                            if(split.Length == 1) 
+                            {
+                                split = replacement.Split('.');
+                            }
+                            if (split.Length == 1) continue;
                             replacement = $"[[{split[0].Trim()},{ConvertToFactionID(split[1].Trim())}]]";
                             temp = temp.Replace(original, replacement);
                         }
