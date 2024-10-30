@@ -114,6 +114,7 @@ namespace TOSFactionColor
                 case "#42":
                 case "#47":
                 case "#50":
+                case "#115":
                     return "7";
                 case "#44":
                 case "#111":
