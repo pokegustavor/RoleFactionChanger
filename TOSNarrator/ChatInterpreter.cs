@@ -3,6 +3,7 @@ using HarmonyLib;
 using Server.Shared.Utils;
 using System.Collections.Generic;
 using System;
+using Server.Shared.Extensions;
 
 namespace TOSFactionColor
 {
@@ -18,8 +19,9 @@ namespace TOSFactionColor
             string backup = text;
             try
             {
-                if (text.Contains("[[") && text.Contains("]]"))
+                if (text.Contains("[[") && text.Contains("]]")) 
                 {
+                    
                     Dictionary<int, int> start_endPositions = new Dictionary<int, int>();
                     int innerCount = 0;
                     int start = -1;
@@ -49,34 +51,62 @@ namespace TOSFactionColor
                         string temp = text;
                         foreach (KeyValuePair<int, int> encap in start_endPositions)
                         {
-                            // [[ [[#1]] , [[#106]] ]]
+                            // [[#1]]([[#45]])
                             string original = text.Substring(encap.Key, encap.Value - encap.Key + 1);
                             string replacement = original.Substring(2, original.Length - 4);
-                            if (!replacement.Contains("[[") || !replacement.Contains("]]")) continue;
-                            // #1, [[#106]] 
-                            replacement = replacement.Remove(replacement.IndexOf("[["), 2);
-                            replacement = replacement.Remove(replacement.IndexOf("]]"), 2);
-                            if ((!replacement.Contains("[[") || !replacement.Contains("]]")) && ((!replacement.Contains("(") || !replacement.Contains(")")))) continue;
-                            // #1, #106 
-                            if (replacement.Contains("[["))
+                            if (replacement.Contains("[[") && replacement.Contains("]]")) //Method 1  [[ [[#1]] , [[#106]] ]]
                             {
+                                // #1, [[#106]] 
                                 replacement = replacement.Remove(replacement.IndexOf("[["), 2);
                                 replacement = replacement.Remove(replacement.IndexOf("]]"), 2);
+                                if ((!replacement.Contains("[[") || !replacement.Contains("]]")) && ((!replacement.Contains("(") || !replacement.Contains(")")))) continue;
+                                // #1, #106 
+                                if (replacement.Contains("[["))
+                                {
+                                    replacement = replacement.Remove(replacement.IndexOf("[["), 2);
+                                    replacement = replacement.Remove(replacement.IndexOf("]]"), 2);
+                                }
+                                else
+                                {
+                                    replacement = replacement.Remove(replacement.IndexOf("("), 1);
+                                    replacement = replacement.Remove(replacement.IndexOf(")"), 1);
+                                }
+                                // {#1} {#106}
+                                string[] split = replacement.Split(',');
+                                if (split.Length == 1)
+                                {
+                                    split = replacement.Split('.');
+                                }
+                                if (split.Length == 1) continue;
+                                replacement = $"[[{split[0].Trim()},{ConvertToFactionID(split[1].Trim())}]]";
+                                temp = temp.Replace(original, replacement);
+                                continue;
                             }
-                            else
+                            original = text.Substring(encap.Key).Replace(" ",string.Empty);
+                            if (encap.Value - encap.Key + 2 < original.Length && original[encap.Value - encap.Key + 1] == '(') //Method 2 [[#1]]([[#106]])
                             {
-                                replacement = replacement.Remove(replacement.IndexOf("("), 1);
-                                replacement = replacement.Remove(replacement.IndexOf(")"), 1);
+                                replacement = text.Substring(encap.Key);
+                                int parEnd = replacement.IndexOf(")");
+                                if (parEnd == -1) continue;
+                                //[[#1]]([[#106]])
+                                replacement = replacement.Substring(0, parEnd + 1);
+                                original = replacement;
+                                //{[[#1]]} {[[#106]])}
+                                string[] split = replacement.Split('(');
+                                if (split.Length == 1) continue;
+                                //{[[#1]]} {[[#106]]}
+                                split[1] = split[1].Remove(split[1].IndexOf(")"),1);
+                                //{#1} {#106}
+                                if (split[1].Contains("[[") && split[1].Contains("]]")) 
+                                {
+                                    split[1] = split[1].Remove(split[1].IndexOf("[["), 2);
+                                    split[1] = split[1].Remove(split[1].IndexOf("]]"), 2);
+                                }
+                                split[0] = split[0].Remove(split[0].IndexOf("[["), 2);
+                                split[0] = split[0].Remove(split[0].IndexOf("]]"), 2);
+                                replacement = $"[[{split[0].Trim()},{ConvertToFactionID(split[1].Trim())}]]";
+                                temp = temp.Replace(original, replacement);
                             }
-                            // {#1} {#106}
-                            string[] split = replacement.Split(',');
-                            if(split.Length == 1) 
-                            {
-                                split = replacement.Split('.');
-                            }
-                            if (split.Length == 1) continue;
-                            replacement = $"[[{split[0].Trim()},{ConvertToFactionID(split[1].Trim())}]]";
-                            temp = temp.Replace(original, replacement);
                         }
                         __instance.chatInput.text = temp;
                     }
@@ -157,10 +187,12 @@ namespace TOSFactionColor
                 case "pand":
                 case "pandora":
                 case "pan":
+                case ":330":
                     return "43";
                 case "comp":
                 case "compliance":
                 case "com":
+                case ":326":
                     return "44";
                 case "ego":
                 case "egotist":
@@ -174,6 +206,8 @@ namespace TOSFactionColor
                 case "hawk":
                 case "red":
                     return "36";
+                case "lol":
+                    return "37";
 
             }
         }
