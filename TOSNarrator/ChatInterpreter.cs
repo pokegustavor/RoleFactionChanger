@@ -49,17 +49,25 @@ namespace TOSFactionColor
                         string temp = text;
                         foreach (KeyValuePair<int, int> encap in start_endPositions)
                         {
-                            // 0[[#1]] , [[#106]] [ ]
+                            // [[ [[#1]] , [[#106]] ]]
                             string original = text.Substring(encap.Key, encap.Value - encap.Key + 1);
                             string replacement = original.Substring(2, original.Length - 4);
                             if (!replacement.Contains("[[") || !replacement.Contains("]]")) continue;
                             // #1, [[#106]] 
                             replacement = replacement.Remove(replacement.IndexOf("[["), 2);
                             replacement = replacement.Remove(replacement.IndexOf("]]"), 2);
-                            if (!replacement.Contains("[[") || !replacement.Contains("]]")) continue;
+                            if ((!replacement.Contains("[[") || !replacement.Contains("]]")) && ((!replacement.Contains("(") || !replacement.Contains(")")))) continue;
                             // #1, #106 
-                            replacement = replacement.Remove(replacement.IndexOf("[["), 2);
-                            replacement = replacement.Remove(replacement.IndexOf("]]"), 2);
+                            if (replacement.Contains("[["))
+                            {
+                                replacement = replacement.Remove(replacement.IndexOf("[["), 2);
+                                replacement = replacement.Remove(replacement.IndexOf("]]"), 2);
+                            }
+                            else
+                            {
+                                replacement = replacement.Remove(replacement.IndexOf("("), 1);
+                                replacement = replacement.Remove(replacement.IndexOf(")"), 1);
+                            }
                             // {#1} {#106}
                             string[] split = replacement.Split(',');
                             if(split.Length == 1) 
@@ -76,6 +84,7 @@ namespace TOSFactionColor
             }
             catch (Exception ex)
             {
+                __instance.PlaySound("Audio/UI/Error.wav", false);
                 __instance.chatInput.text = backup;
                 Console.WriteLine($"(FACTIONCHANGER)Error! changes reverted. Error message: {ex.Message}, attempeted to change message {backup}");
             }
@@ -83,7 +92,7 @@ namespace TOSFactionColor
 
         static string ConvertToFactionID(string role) 
         {
-            switch (role) 
+            switch (role.ToLower()) 
             {
                 default:
                 case "#100":
@@ -133,6 +142,38 @@ namespace TOSFactionColor
                     return "13";
                 case "#254":
                     return "14";
+
+                //BTOS Roles
+                case "#55": //Jackal
+                    return "33";
+                case "#57": //Judge
+                    return "38";
+                case "#58": //Auditor
+                    return "39";
+                case "#60": //Starspawn
+                    return "41";
+                case "#59": //Inquisitor
+                    return "40";
+                case "pand":
+                case "pandora":
+                case "pan":
+                    return "43";
+                case "comp":
+                case "compliance":
+                case "com":
+                    return "44";
+                case "ego":
+                case "egotist":
+                    return "42";
+                case "blue":
+                case "frog":
+                    return "34";
+                case "yellow":
+                case "lion":
+                    return "35";
+                case "hawk":
+                case "red":
+                    return "36";
 
             }
         }
