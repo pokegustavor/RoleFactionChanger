@@ -8,23 +8,24 @@ using Server.Shared.Extensions;
 namespace TOSFactionColor
 {
     [HarmonyPatch(typeof(ChatInputController))]
-    class ChatControllerPatch 
+    class ChatControllerPatch
     {
         [HarmonyPatch("SubmitChat")]
-        [HarmonyPrefix]    
-        public static void PrefixToChat(ChatInputController __instance) 
+        [HarmonyPrefix]
+        public static void PrefixToChat(ChatInputController __instance)
         {
             // I hate [[ [[#1]] , [[#106]] ]] that think they are [[ [[#5]], [[#45]] ]]
             string text = __instance.chatInput.mentionPanel.mentionsProvider.EncodeText(__instance.chatInput.text.ResolveUnicodeSequences());
             string backup = text;
             try
             {
-                if (text.Contains("[[") && text.Contains("]]")) 
+                if (text.Contains("[[") && text.Contains("]]"))
                 {
-                    
+
                     Dictionary<int, int> start_endPositions = new Dictionary<int, int>();
                     int innerCount = 0;
                     int start = -1;
+                    string factionID;
                     for (int i = 0; i < text.Length; i++)
                     {
                         if (i < text.Length - 1 && text[i] == '[' && text[i + 1] == '[')
@@ -78,11 +79,12 @@ namespace TOSFactionColor
                                     split = replacement.Split('.');
                                 }
                                 if (split.Length == 1) continue;
+                                factionID = ConvertToFactionID(split[1].Trim());
                                 replacement = $"[[{split[0].Trim()},{ConvertToFactionID(split[1].Trim())}]]";
                                 temp = temp.Replace(original, replacement);
                                 continue;
                             }
-                            original = text.Substring(encap.Key).Replace(" ",string.Empty);
+                            original = text.Substring(encap.Key).Replace(" ", string.Empty);
                             if (encap.Value - encap.Key + 2 < original.Length && original[encap.Value - encap.Key + 1] == '(') //Method 2 [[#1]]([[#106]])
                             {
                                 replacement = text.Substring(encap.Key);
@@ -95,17 +97,22 @@ namespace TOSFactionColor
                                 string[] split = replacement.Split('(');
                                 if (split.Length == 1) continue;
                                 //{[[#1]]} {[[#106]]}
-                                split[1] = split[1].Remove(split[1].IndexOf(")"),1);
+                                split[1] = split[1].Remove(split[1].IndexOf(")"), 1);
                                 //{#1} {#106}
-                                if (split[1].Contains("[[") && split[1].Contains("]]")) 
+                                if (split[1].Contains("[[") && split[1].Contains("]]"))
                                 {
                                     split[1] = split[1].Remove(split[1].IndexOf("[["), 2);
                                     split[1] = split[1].Remove(split[1].IndexOf("]]"), 2);
                                 }
                                 split[0] = split[0].Remove(split[0].IndexOf("[["), 2);
                                 split[0] = split[0].Remove(split[0].IndexOf("]]"), 2);
-                                replacement = $"[[{split[0].Trim()},{ConvertToFactionID(split[1].Trim())}]]";
-                                temp = temp.Replace(original, replacement);
+                                if (!split[0].Contains("#")) continue;
+                                factionID = ConvertToFactionID(split[1].Trim());
+                                if (factionID != "-1")
+                                {
+                                    replacement = $"[[{split[0].Trim()},{ConvertToFactionID(split[1].Trim())}]]";
+                                    temp = temp.Replace(original, replacement);
+                                }
                             }
                         }
                         __instance.chatInput.text = temp;
@@ -120,11 +127,12 @@ namespace TOSFactionColor
             }
         }
 
-        static string ConvertToFactionID(string role) 
+        static string ConvertToFactionID(string role)
         {
-            switch (role.ToLower()) 
+            switch (role.ToLower())
             {
                 default:
+                    return "-1";
                 case "#100":
                 case "#101":
                 case "#102":
