@@ -5,14 +5,16 @@ using System.Collections.Generic;
 using System;
 using Server.Shared.Extensions;
 using SimpleSpritePacker;
+using SML;
 
 namespace TOSFactionColor
 {
     class Utilities 
     {
-        internal static string ProcessChat(string text)
+        internal static string ProcessChat(string text, string ogText = ".dot.")
         {
             string backup = text;
+            bool MadeAChange = false;
             if (text.Contains("[[") && text.Contains("]]"))
             {
 
@@ -75,6 +77,7 @@ namespace TOSFactionColor
                             if (split.Length == 1) continue;
                             factionID = ConvertToFactionID(split[1].Trim());
                             replacement = $"[[{split[0].Trim()},{ConvertToFactionID(split[1].Trim())}]]";
+                            MadeAChange = true;
                             temp = temp.Replace(original, replacement);
                             continue;
                         }
@@ -105,14 +108,16 @@ namespace TOSFactionColor
                             if (factionID != "-1")
                             {
                                 replacement = $"[[{split[0].Trim()},{ConvertToFactionID(split[1].Trim())}]]";
+                                MadeAChange = true;
                                 temp = temp.Replace(original, replacement);
                             }
                         }
                     }
-                    return temp;
+                    if(MadeAChange)return temp;
                 }
 
             }
+            if (ogText != ".dot.") return ogText;
             return backup;
         }
 
@@ -241,6 +246,7 @@ namespace TOSFactionColor
         [HarmonyPrefix]
         public static void PrefixToDeathNote(DeathNotePanel __instance)
         {
+            if (!ModSettings.GetBool("Apply to Death Note")) return;
             // I hate [[ [[#1]] , [[#106]] ]] that think they are [[ [[#5]], [[#45]] ]]
             string text = __instance.mentionsPanel.mentionsProvider.EncodeText(__instance.inputField.text.ResolveUnicodeSequences());
             string backup = text;
@@ -263,12 +269,13 @@ namespace TOSFactionColor
         [HarmonyPrefix]
         public static void PrefixToDeathNote(LastWillPanel __instance)
         {
+            if (!ModSettings.GetBool("Apply to Last Will")) return;
             // I hate [[ [[#1]] , [[#106]] ]] that think they are [[ [[#5]], [[#45]] ]]
             string text = __instance.mentionsPanel.mentionsProvider.EncodeText(__instance.inputField.text.ResolveUnicodeSequences());
-            string backup = text;
+            string backup = __instance.inputField.text;
             try
             {
-                __instance.inputField.text = Utilities.ProcessChat(text);
+                __instance.inputField.text = Utilities.ProcessChat(text,backup);
             }
             catch (Exception ex)
             {

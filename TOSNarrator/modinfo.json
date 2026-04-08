@@ -3,6 +3,6 @@
   "DisplayName": "Role Faction Changer",
   "Authors": [ "Pokegustavo" ],
   "Description": "Simplifies the mention of roles as a different faction to [[#role,#faction]] or #role(#faction)",
-  "Version": "1.0.0",
+  "Version": "1.0.1",
   "RequiredMods": []
 }
