@@ -9,7 +9,7 @@ using SML;
 
 namespace TOSFactionColor
 {
-    class Utilities 
+    class Patches 
     {
         internal static string ProcessChat(string text, string ogText = ".dot.")
         {
@@ -227,7 +227,7 @@ namespace TOSFactionColor
             string backup = text;
             try
             {
-                __instance.chatInput.text = Utilities.ProcessChat(text);
+                __instance.chatInput.text = Patches.ProcessChat(text);
             }
             catch (Exception ex)
             {
@@ -244,15 +244,15 @@ namespace TOSFactionColor
     {
         [HarmonyPatch("SaveDeathNote")]
         [HarmonyPrefix]
-        public static void PrefixToDeathNote(DeathNotePanel __instance)
+        public static void PrefixToDeathNote(DeathNotePanel __instance, ref string __state)
         {
-            if (!ModSettings.GetBool("Apply to Death Note")) return;
             // I hate [[ [[#1]] , [[#106]] ]] that think they are [[ [[#5]], [[#45]] ]]
             string text = __instance.mentionsPanel.mentionsProvider.EncodeText(__instance.inputField.text.ResolveUnicodeSequences());
-            string backup = text;
+            string backup = __instance.inputField.text;
+            __state = backup;
             try
             {
-                __instance.inputField.text = Utilities.ProcessChat(text);
+                __instance.inputField.text = Patches.ProcessChat(text);
             }
             catch (Exception ex)
             {
@@ -261,21 +261,28 @@ namespace TOSFactionColor
                 Console.WriteLine($"(FACTIONCHANGER)Error! changes reverted. Error message: {ex.Message}, attempeted to change message {backup}");
             }
         }
+        [HarmonyPatch("SaveDeathNote")]
+        [HarmonyPostfix]
+        static void PostfixToDeathNote(DeathNotePanel __instance, ref string __state)
+        {
+            __instance.inputField.text = __state;
+        }
     }
+
     [HarmonyPatch(typeof(LastWillPanel))]
     class LastWillPatch
     {
         [HarmonyPatch("SaveWill")]
         [HarmonyPrefix]
-        public static void PrefixToDeathNote(LastWillPanel __instance)
+        public static void PrefixToLastWill(LastWillPanel __instance, ref string __state)
         {
-            if (!ModSettings.GetBool("Apply to Last Will")) return;
             // I hate [[ [[#1]] , [[#106]] ]] that think they are [[ [[#5]], [[#45]] ]]
             string text = __instance.mentionsPanel.mentionsProvider.EncodeText(__instance.inputField.text.ResolveUnicodeSequences());
             string backup = __instance.inputField.text;
+            __state = backup;
             try
             {
-                __instance.inputField.text = Utilities.ProcessChat(text,backup);
+                __instance.inputField.text = Patches.ProcessChat(text,backup);
             }
             catch (Exception ex)
             {
@@ -283,6 +290,12 @@ namespace TOSFactionColor
                 __instance.inputField.text = backup;
                 Console.WriteLine($"(FACTIONCHANGER)Error! changes reverted. Error message: {ex.Message}, attempeted to change message {backup}");
             }
+        }
+        [HarmonyPatch("SaveWill")]
+        [HarmonyPostfix]
+        static void PostfixToLastWill(LastWillPanel __instance, ref string __state)
+        {
+            __instance.inputField.text = __state;
         }
     }
 }
